@@ -1,5 +1,4 @@
 //#hmm..
-//#There is a big gap between some verses (like Jude only has 1 chapter)
 //#tried %-20 etc but it just mucks up
 import std.stdio;
 import std.string;
@@ -48,7 +47,6 @@ struct MainWindow {
 	Window _window;
 	EditBox _editBoxMain;
 
-
 	string _input;
 	bool _done = false, _doVerse;
 
@@ -75,7 +73,7 @@ struct MainWindow {
 					minWidth: 640; minHeight: 700; maxHeight: 640;
 				}
 
-				Button { id: buttonActivate; maxWidth: 100; text: "Activate" }
+				Button { id: buttonActivate; maxWidth: 100; text: "- Activate Last Line -" }
 			}
 		});
 
@@ -83,17 +81,21 @@ struct MainWindow {
 		_window.mainWidget.childById!Button("buttonActivate").click = delegate(Widget w) {
 			import std.conv: to;
 
-			auto t = _editBoxMain.text.to!string;
-			size_t i = t.lastIndexOf("\n");
+			auto t = _editBoxMain.text;
+			auto i = t.lastIndexOf("\n");
 			if (i != -1) {
-				processLastLine(t[i + 1 .. $]);
+				processLastLine(t[i + 1 .. $].to!string);
+
+				return true;
+			} else {
+				processLastLine(t.to!string);
 
 				return true;
 			}
-			return false;
 		};
 
-		_editBoxMain.text = "Insert 'h' at the bottom of the line, then press the Activate button for help\n".to!dstring;
+		_editBoxMain.text = "Insert 'h' at the bottom of the line,\n" ~
+			"then press the Activate button for help\n".to!dstring;
 
 		_window.show();
 
@@ -121,6 +123,19 @@ struct MainWindow {
 					_done = true;
 
 					return; //#Hmm..
+				case "marker":
+					int len = 10;
+					enum error = "Invalid input";
+
+					if (args.length == 0)
+						output = error;
+					else
+						try { len = args[0].to!int; } catch(Exception e) { output = error; }
+					foreach(l; 1 .. len + 1) {
+						auto line = "#".replicate(l) ~ "\n";
+						l == 0 ? output = line : output ~= line;
+					}
+				break;
 				case "h":
 					output =
 						"\nq - quit\n" ~
@@ -166,8 +181,7 @@ struct MainWindow {
 						output = args[0] ~ " doesn't exist!";
 					}
 				break;
-				//#There is a big gap between some verses (like Jude only has 1 chapter)
-				case "everyBook": // n 1 1 eg. Gen 1 1 .., Exo 1 1 ..
+				case "everyBook": // `everyBook 1 1` eg. Gen 1 1 .., Exo 1 1 ..
 					auto args2 = args.dup;
 					try {
 						int chp = 1, ver = 1;
@@ -195,7 +209,6 @@ struct MainWindow {
 					}
 				break;
 				case "everyChp": // Joh n 1 (John 1 1 (verse), John 2 1 (verse) etc)
-						mixin(trace("args"));
 						try {
 							if (args.length > 2) {
 								foreach(n; 1 .. g_bible.getBook(g_bible.bookNumberFromTitle(args[0])).m_chapters.length + 1) {
