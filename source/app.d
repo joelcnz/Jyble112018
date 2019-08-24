@@ -1,3 +1,4 @@
+//#buggy?
 //#I don't see "n" doing any thing?!
 //#upto with history
 import std.stdio;
@@ -13,11 +14,14 @@ import dunit;
 import dlangui;
 
 import arsd.dom: Document, Element;
-import arsd.terminal;
 
 import bible.base, jmisc;
 
-immutable g_editBoxsWrapWidth = 38;
+version = retinaDisplay;
+
+const SCALE_FACTOR = 2.0f;
+
+immutable g_editBoxsWrapWidth = 36;
 
 mixin APP_ENTRY_POINT;
 
@@ -51,11 +55,15 @@ struct MainWindow {
 		_editBoxRight,
 		_editBoxHistory;
 	EditLine _editLineInWindowSpot,
-		_editLineSearch;
+		_editLineSearch,
+		_editLineTitle,
+		_editLineTitleAndSubTitle;
 	CheckBox _checkBoxSearchCaseSensitive,
 		_checkBoxPartWordSearch,
 		_checkBoxWordSearch,
-		_checkBoxPhraseSearch;
+		_checkBoxPhraseSearch,
+		_checkBoxAppend;
+	Button _wrapToggle;
 
 	string _input;
 	bool _done = false, _doVerse;
@@ -69,10 +77,11 @@ struct MainWindow {
 			dunit_main(dargs);
 
 		//#stuff at the start (in the terminal when the the program is run)
-		immutable ESV = "esv";
-		loadBible(ESV);
+		immutable BIBLE_VER = "esv"; // "jkv";
+		loadBible(BIBLE_VER);
 
-		g_wrap = true;
+		g_wrap = false;
+
 
 		_window = Platform.instance.createWindow(
 			"Jyble Bible", null, WindowFlag.Resizable, 780 + 12, 800);
@@ -80,27 +89,28 @@ struct MainWindow {
 		// Crease widget to show in window
 		_window.mainWidget = parseML(q{
 			VerticalLayout {
-				backgroundColor: "#80FF80"
+				backgroundColor: "#80FF00"
+				textColor: "#000000"
 				margins: 3
 				padding: 3
 
 				HorizontalLayout {
 					EditBox {
 						id: editBoxMain
-						minWidth: 390; minHeight: 540; maxHeight: 540;
+						minWidth: 786; minHeight: 1000; maxHeight: 1000;
 					}
 					EditBox {
 						id: editBoxRight
-						minWidth: 390; minHeight: 540; maxHeight: 540;
+						minWidth: 786; minHeight: 1000; maxHeight: 1000;
 					}
 				}
 
 				TextWidget {
-					text: "History:"
+					text: "History:";
 				}
 				EditBox {
 					id: editBoxHistory
-					minWidth: 780; minHeight: 100; maxHeight: 100;
+					minWidth: 1400; minHeight: 320; maxHeight: 320;
 				}
 
 				HorizontalLayout {
@@ -109,13 +119,17 @@ struct MainWindow {
 					}
 					EditLine {
 						id: editLineInWindowSpot
-						minWidth: 500
+						minWidth: 800
 					}
 					Button {
 						id: buttonActivate
 						text: "Activate"
 					}
-					Button { id: buttonWrap; text: "Wrap Text" }
+					Button { id: buttonWrap; text: "*Wrap Text" }
+					Button {
+						id: buttonExpVers
+						text: "Expand Verses"
+					}
 				}
 				
 				HorizontalLayout {
@@ -125,7 +139,7 @@ struct MainWindow {
 					}
 					EditLine {
 						id: editLineSearch
-						minWidth: 190
+						minWidth: 400
 					}
 					TextWidget { text: "pws-" }
 					CheckBox { id: checkBoxPartWordSearch; }
@@ -141,6 +155,35 @@ struct MainWindow {
 						id: buttonActivateSearch
 						text: "Activate Search"
 					}
+					Button { id: wrapToggle; text: "Unwrap" }
+					TextWidget { text: "Append:" }
+					CheckBox { id: checkBoxAppend; }
+				}
+				HorizontalLayout {
+					TextWidget {
+						text: "Extract (from right to left) with title:"
+					}
+					EditLine {
+						id: editLineTitle
+						minWidth: 990
+					}
+					Button {
+						id: buttonActivateExtractTitle
+						text: "Extract Title"
+					} 
+				}
+				HorizontalLayout {
+					TextWidget {
+						text: "Extract (from right to left) with title and sub title:"
+					}
+					EditLine {
+						id: editLineTitleAndSubTitle
+						minWidth: 690
+					}
+					Button {
+						id: buttonActivateExtractTitleAndSubTitle
+						text: "Extract Title and Sub Title"
+					} 
 				}
 			}
 		});
@@ -154,14 +197,65 @@ struct MainWindow {
 		_checkBoxPartWordSearch = _window.mainWidget.childById!CheckBox("checkBoxPartWordSearch");
 		_checkBoxWordSearch = _window.mainWidget.childById!CheckBox("checkBoxWordSearch");
 		_checkBoxPhraseSearch = _window.mainWidget.childById!CheckBox("checkBoxPhraseSearch");
+		_wrapToggle = _window.mainWidget.childById!Button("wrapToggle");
+		_checkBoxAppend = _window.mainWidget.childById!CheckBox("checkBoxAppend");
+		_editLineTitle = _window.mainWidget.childById!EditLine("editLineTitle");
+		_editLineTitleAndSubTitle = _window.mainWidget.childById!EditLine("editLineTitleAndSubTitle");
 
 		_checkBoxPartWordSearch.checked = false;
 		_checkBoxWordSearch.checked = true;
 		_checkBoxPhraseSearch.checked = false;
 		_checkBoxSearchCaseSensitive.checked = false;
+		_checkBoxAppend.checked = true;
+
+		resetVerseTags;
+
+		void doAppendQ() {
+			if (_checkBoxAppend.checked == false) {
+				_editBoxMain.text = "";
+				resetVerseTags;
+			}
+		}
+
+		_window.mainWidget.childById!Button("buttonActivateExtractTitleAndSubTitle").click = delegate(Widget w) {
+			doAppendQ;
+			processTask("extractSubNotes "d ~ _editLineTitleAndSubTitle.text);
+
+			return true;
+		};
+
+		_window.mainWidget.childById!Button("buttonActivateExtractTitle").click = delegate(Widget w) {
+			doAppendQ;
+			processTask("extractNotes "d ~ _editLineTitle.text);
+
+			return true;
+		};
+
+		//#buggy?
+		_editBoxMain.wordWrap = true;
+		_editBoxRight.wordWrap = true;
+		_editBoxHistory.wordWrap = true;
+
+		_window.mainWidget.childById!Button("wrapToggle").click = delegate(Widget w) {
+			immutable wboxes = "(text boxes: main box, right box, history box)";
+			if (true == _editBoxMain.wordWrap) {
+				_editBoxMain.wordWrap = false;
+				_editBoxRight.wordWrap = false;
+				_editBoxHistory.wordWrap = false;
+				_wrapToggle.text = "Wrap"d;
+				addToHistory("Unwrapped text ", wboxes);
+			} else {
+				_editBoxMain.wordWrap = true;
+				_editBoxRight.wordWrap = true;
+				_editBoxHistory.wordWrap = true;
+				_wrapToggle.text = "Unwrap"d;
+				addToHistory("Wrapped text ", wboxes);
+			}
+			return true;
+		};
 
 		_window.mainWidget.childById!Button("buttonActivateSearch").click = delegate(Widget w) {
-
+			doAppendQ;
 			auto caseSensitive = _checkBoxSearchCaseSensitive.checked ? "%caseSensitive "d : ""d;
 			if (_checkBoxPhraseSearch.checked)
 				processTask("ps "d ~ caseSensitive ~ _editLineSearch.text);
@@ -175,7 +269,9 @@ struct MainWindow {
 
 		_window.mainWidget.childById!Button("buttonClearLeft").click = delegate(Widget w) {
 			_editBoxMain.text = "";
-
+			resetVerseTags;
+			addToHistory("Cleared main text box. Reset tags (eg. for search within last search).");
+			
 			return true;
 		};
 
@@ -187,11 +283,20 @@ struct MainWindow {
 				s ~= wrap(line, g_editBoxsWrapWidth, null, null, 4);
 			_editBoxMain.text = s;
 
+			addToHistory("Main text wrap by inserting new line characters.");
+
+			return true;
+		};
+
+		_window.mainWidget.childById!Button("buttonExpVers").click = delegate(Widget w) {
+			doAppendQ;
+			processTask("expVers");
+
 			return true;
 		};
 
 		_window.mainWidget.childById!Button("buttonActivate").click = delegate(Widget w) {
-			//processTask(_editLineInWindowSpot.text.to!string);
+			doAppendQ;
 			processTask(_editLineInWindowSpot.text);
 
 			return true;
@@ -200,6 +305,8 @@ struct MainWindow {
 		_editBoxMain.text = "At the 'Enter command'\n" ~
 			"box type in 'h'\n" ~
 			"and hit Activate\n";
+
+		addToHistory("Welcome to Jyble");
 
 		_window.show();
 
@@ -236,7 +343,7 @@ struct MainWindow {
 						try { len = args[0].to!int; } catch(Exception e) { output = error; }
 					foreach(l; 1 .. len + 1) {
 						auto line = "#".replicate(l) ~ "\n";
-						l == 0 ? output = line : output ~= line;
+						l == 0 ? output = line : (output ~= line);
 					}
 					addToHistory("Show marker");
 				break;
@@ -253,6 +360,15 @@ struct MainWindow {
 						output = "Notes Extraction:\n" ~ getNotesSortFromTitle(title, _editBoxRight.text.to!string);
 						addToHistory("Notes Extraction: " ~ title);
 					}
+				break;
+				// extractSubNotes Bible \/ Snare1.pdf \/b
+				case "extractSubNotes":
+					immutable title = args.join(" ")[0 .. args.join(" ").indexOf(` \/`) + 3];
+					immutable subTitle = args.join(" ")[title.length + 1 .. $];
+
+					output = "Sub notes Extraction:\n" ~ getNotesSortFromTitleAndSubTitle(title, subTitle,
+						_editBoxRight.text.to!string);
+					addToHistory("Sub notes Extraction: " ~ title ~ " " ~ subTitle);
 				break;
 				case "bible":
 					import std.algorithm: any;
@@ -370,8 +486,8 @@ struct MainWindow {
 				break;
 				case "wrap":
 					if (args.length == 0) {
-						g_wrap = false;
-						output = "Text wrap is off";
+						g_wrap = (g_wrap ? false : true);
+						output = "Text wrap is " ~ (g_wrap ? "on" : "off");
 						addToHistory("Wrap: ", output);
 					} else {
 						if (args.length == 1) {
@@ -479,12 +595,19 @@ struct MainWindow {
 			} // switch
 		}
 		if (_doVerse) {
+			auto history = input;
+			if (input.length > 2) {
+				size_t end = input.indexOf("->");
+				if (end == -1)
+					end = input.length;
+				input = input[0 .. end].strip;
+			}
 			output = g_bible.argReference(g_bible.argReferenceToArgs(input));
-			addToHistory(input);
+			addToHistory(history);
 		}
 
 		if (output != "") {
-			_editBoxMain.text = _editBoxMain.text ~ text("\n",
+			_editBoxMain.text = _editBoxMain.text ~ text(_editBoxMain.text != "" ? "\n" : "",
 				output).to!dstring;
 		}
 	}
@@ -503,13 +626,23 @@ extern (C) int UIAppMain(string[] args) {
 		import std.stdio : writeln;
 
 		writeln;
-		writeln("###");
+		writeln("## ");
 		writeln("# #");
 		writeln("## ");
 		writeln("# #");
-		writeln("###");
+		writeln("## ");
 		writeln;
 	}
+
+        // just in case, but dlangui package seems to import pretty much everything
+        import dlangui.core.types;
+
+        // pretty much self explanatory, where 96 DPI is "normal" 100% zoom
+        // alternatively you can set it to your screen real DPI or PPI or whatever it is called now
+        // however for 4k with 144 DPI IIRC I set it to 1.25 scale because 1.5 was too big and/or didn't match WPF/native elements
+	version(retinaDisplay)
+		overrideScreenDPI = cast(int)(96f * SCALE_FACTOR);
+
 	MainWindow mainWindow;
 	mainWindow.setup;
 

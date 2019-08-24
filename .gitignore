@@ -1,3 +1,7 @@
+*.png
+jyble-test-application
+t
+*.o
 jyble
 _notes.txt
 .dub
