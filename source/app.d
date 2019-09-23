@@ -15,7 +15,7 @@ import dlangui;
 
 import arsd.dom: Document, Element;
 
-import bible.base, jmisc;
+import bible, jmisc;
 
 version = retinaDisplay;
 
@@ -67,6 +67,8 @@ struct MainWindow {
 
 	string _input;
 	bool _done = false, _doVerse;
+
+	bool _clearHelpFirstTime = true;
 
 	string _helpTxt;
 
@@ -206,7 +208,7 @@ struct MainWindow {
 		_checkBoxWordSearch.checked = true;
 		_checkBoxPhraseSearch.checked = false;
 		_checkBoxSearchCaseSensitive.checked = false;
-		_checkBoxAppend.checked = true;
+		_checkBoxAppend.checked = false;
 
 		resetVerseTags;
 
@@ -270,7 +272,12 @@ struct MainWindow {
 		_window.mainWidget.childById!Button("buttonClearLeft").click = delegate(Widget w) {
 			_editBoxMain.text = "";
 			resetVerseTags;
-			addToHistory("Cleared main text box. Reset tags (eg. for search within last search).");
+			if (_clearHelpFirstTime) {
+				addToHistory("Cleared mleft text box. Reset tags (eg. for search within last search).");
+				_clearHelpFirstTime = false;
+			} else {
+				addToHistory("Cleared left text box.");
+			}
 			
 			return true;
 		};
