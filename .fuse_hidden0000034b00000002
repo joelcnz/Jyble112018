@@ -1,2 +1,0 @@
-dmd %1 %2 %3 %4 %5 %6 %7 %8 %9 -ofbin\Debug\biblegate base.d book.d dom.d verse.d
- bible.d chapter.d main.d bgate\kjv.d ..\OtherPeoples\dunit\dunit.d ..\Jeca\jeca\misc.d
