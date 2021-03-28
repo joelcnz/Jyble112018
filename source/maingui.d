@@ -80,15 +80,15 @@ final class AppBox : Box
 		this.partnerSearchBoxEntry = partnerSearchBoxEntry;
 	}
 
-	deprecated auto getShortHistoryMyTextView() {
+	auto getShortHistoryMyTextView() {
 		return partnerHistoryMyTextView;
 	}
 
-	deprecated auto getShortBigBoxesBoxCommandBoxEntry() {
+	auto getShortBigBoxesBoxCommandBoxEntry() {
 		return partnerCommandBoxEntry;
 	}
 
-	deprecated auto getShortSearchBoxEntry() {
+	auto getShortSearchBoxEntry() {
 		return partnerSearchBoxEntry;
 	}
 
@@ -118,7 +118,7 @@ final class AppBox : Box
 		return bigBoxes;
 	}
 
-	deprecated auto getCommandEntry() {
+	auto getCommandEntry() {
 		return commandBox.commandEntry;
 	}
 
@@ -214,7 +214,7 @@ class HistoryBox : VerticalBox
 		packStart(scrolledTextWindowHistory, expand, fill, localPadding);
 	} // this()
 	
-    deprecated auto getMyTextViewHistory() {
+    auto getMyTextViewHistory() {
 		return scrolledTextWindowHistory.myTextView;
     }
 } // class HistoryBox

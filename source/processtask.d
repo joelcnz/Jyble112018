@@ -36,7 +36,7 @@ struct ProcessTask {
     }
 
     void addToHistory(T...)(in T args) {
-		immutable status = upDateStatus(args);
+		immutable status = jm_upDateStatus(args);
 		if (partnerHistoryBox !is null) {
 			immutable text = partnerHistoryBox.getMyTextViewHistory.getTextBuffer.getText;
 
@@ -64,6 +64,13 @@ struct ProcessTask {
 				case "q", "quit", "exit":
 					output = "Hold down [control] and tap [Q] to quit";
 					addToHistory("Show quit instructions");
+				break;
+				case "lineSearch":
+					if (args.length) {
+						auto a = args.join(" ");
+						output = jm_searchCollect(a, partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText).join("\n");
+						addToHistory("Line Search '", a, "'");
+					}
 				break;
 				case "processTime":
 					output = processTime(partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText.split("\n"));
@@ -128,8 +135,17 @@ struct ProcessTask {
 						addToHistory(output);
 						break;
 					}
-					immutable title = args.join(" ")[0 .. args.join(" ").indexOf(` \/`) + 3];
-					immutable subTitle = args.join(" ")[title.length + 1 .. $];
+					string title, subTitle;
+					try {
+						title = args.join(" ")[0 .. args.join(" ").indexOf(` \/`) + 3];
+						if (title.length + 3 > args.join(" ").length)
+							throw new Exception("Invalid input - " ~ args.join(" "));
+						subTitle = args.join(" ")[title.length + 1 .. $];
+					} catch(Exception e) {
+						writeln(output = e.msg);
+						addToHistory(e.msg);
+						break;
+					}
 
 					output = "Sub notes Extraction:\n" ~ getNotesSortFromTitleAndSubTitle(title, subTitle,
 						partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText);
