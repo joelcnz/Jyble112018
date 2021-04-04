@@ -62,7 +62,7 @@ struct ProcessTask {
 				case "crossReferences", "cross":
 					if (args.length) {
 						auto a = args.join(" ");
-						string titleAndFooter = a~" -> Cross reference\n";
+						string titleAndFooter = a~" -> cross reference\n";
 						string result = titleAndFooter;
 
 						foreach(i, vr; bl_verRefs) {
@@ -145,6 +145,7 @@ struct ProcessTask {
 							output = args[0] ~ " - filename does not exist in folder!";
 						}
 					} else {
+						doAppendQ;
 						if (partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText != "") {
 							output = g_bible.expVers("dummy1", "dummy2",
 								partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText);
