@@ -77,6 +77,7 @@ struct ProcessTask {
 						else
 							partnerBigBoxes.getMyTextViewRight.getTextBuffer.setText = 
 								partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText ~ result;
+						addToHistory("Do '", a, "' Cross references.");	
 					}
 				break;
 				case "q", "quit", "exit", "disappear", "leave", "close", "hitTheRoad":
