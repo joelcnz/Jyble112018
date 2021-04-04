@@ -61,6 +61,21 @@ struct ProcessTask {
 
 			switch(base) {
 				default: doVerse = true; break;
+				case "crossReferences", "cross":
+					if (args.length) {
+						auto a = args.join(" ");
+						string titleAndFooter = "["~a~"] - Cross references\n";
+						string result = titleAndFooter;
+
+						foreach(i, vr; bl_verRefs) {
+							if (bl_vers[i] == a)
+								result ~= vr ~ "\n";
+						}
+						
+						result ~= titleAndFooter;
+						partnerBigBoxes.getMyTextViewRight.getTextBuffer.setText = result;
+					}
+				break;
 				case "q", "quit", "exit":
 					output = "Hold down [control] and tap [Q] to quit";
 					addToHistory("Show quit instructions");

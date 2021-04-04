@@ -1,3 +1,5 @@
+
+//#new
 import base;
 
 import maingui;
@@ -15,7 +17,9 @@ version(unittest) {
 		writeln("## ");
 		writeln;
 	}
-	
+
+	loadCrossRefs("cross_references.txt"); //#new
+
 	Main.init(args);
 
 	g_RigWindow = new RigWindow();
