@@ -61,7 +61,6 @@ struct ProcessTask {
 				default: doVerse = true; break;
 				case "crossReferences", "cross":
 					if (args.length) {
-						doAppendQ;
 						auto a = args.join(" ");
 						string titleAndFooter = a~" -> Cross reference\n";
 						string result = titleAndFooter;
