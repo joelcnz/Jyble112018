@@ -45,8 +45,6 @@ struct ProcessTask {
 	}
 
 	void processTask(T)(in T oinput) {
-		doAppendQ;
-
 		string output;
 
 		import std.stdio;
@@ -64,30 +62,37 @@ struct ProcessTask {
 				case "crossReferences", "cross":
 					if (args.length) {
 						auto a = args.join(" ");
-						string titleAndFooter = "["~a~"] - Cross references\n";
+						string titleAndFooter = a~" -> Cross reference\n";
 						string result = titleAndFooter;
 
 						foreach(i, vr; bl_verRefs) {
 							if (bl_vers[i] == a)
 								result ~= vr ~ "\n";
 						}
-						
+
 						result ~= titleAndFooter;
-						partnerBigBoxes.getMyTextViewRight.getTextBuffer.setText = result;
+						if (partnerSearchBox.getAppendCheckButton.getActive == false)
+							partnerBigBoxes.getMyTextViewRight.getTextBuffer.setText = result;
+						else
+							partnerBigBoxes.getMyTextViewRight.getTextBuffer.setText = 
+								partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText ~ result;
 					}
 				break;
-				case "q", "quit", "exit":
+				case "q", "quit", "exit", "disappear", "leave", "close", "hitTheRoad":
+					doAppendQ;
 					output = "Hold down [control] and tap [Q] to quit";
 					addToHistory("Show quit instructions");
 				break;
 				case "lineSearch":
 					if (args.length) {
+						doAppendQ;
 						auto a = args.join(" ");
 						output = jm_searchCollect(a, partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText).join("\n");
 						addToHistory("Line Search '", a, "'");
 					}
 				break;
 				case "processTime":
+					doAppendQ;
 					output = processTime(partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText.split("\n"));
 					addToHistory(output);
 				break;
@@ -99,17 +104,22 @@ struct ProcessTask {
 						output = error;
 					else
 						try { len = args[0].to!int; } catch(Exception e) { output = error; }
-					foreach(l; 1 .. len + 1) {
-						auto line = "#".replicate(l) ~ "\n";
-						l == 0 ? output = line : (output ~= line);
+					if (output != error) {
+						addToHistory("Show marker");
+						foreach(l; 1 .. len + 1) {
+							auto line = "#".replicate(l) ~ "\n";
+							l == 0 ? output = line : (output ~= line);
+						}
+						doAppendQ;
 					}
-					addToHistory("Show marker");
 				break;
 				case "h", "help":
+					doAppendQ;
 					output = _helpTxt;
 					addToHistory("Display help");
 				break;
 				case "extractNotes":
+					doAppendQ;
 					if (args.length == 0) {
 						output = "Notes Extraction:\n" ~
 							getNotesSortDaysToText(partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText);
@@ -123,6 +133,7 @@ struct ProcessTask {
 				break;
 				case "expVers":
 					if (args.length) {
+						doAppendQ;
 						if (args[0].exists) {
 							auto fileName = "exp_" ~ args[0];
 							
@@ -146,6 +157,7 @@ struct ProcessTask {
 				// extractSubNotes Bible \/ Snare1.pdf \/b
 				case "extractSubNotes":
 					if (args.length == 0) {
+						doAppendQ;
 						output = "Sub Notes Extraction, with no arguments";
 						addToHistory(output);
 						break;
@@ -161,7 +173,7 @@ struct ProcessTask {
 						addToHistory(e.msg);
 						break;
 					}
-
+					doAppendQ;
 					output = "Sub notes Extraction:\n" ~ getNotesSortFromTitleAndSubTitle(title, subTitle,
 						partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText);
 					addToHistory("Sub notes Extraction: " ~ title ~ " " ~ subTitle);
@@ -174,20 +186,24 @@ struct ProcessTask {
 					auto biblesList = "ASV KJV";
 					auto bibleVersion = args[0].toUpper;
 					if (args.length == 1 && any!(a => a == bibleVersion)(biblesList.split)) {
+						doAppendQ;
 						loadBible(bibleVersion, buildPath("..", "BibleLib", "Versions"));
 						output = text(bibleVersion, " Bible version loaded..");
 						addToHistory("Set Bible version to: ", bibleVersion.toUpper);
 					} else {
+						doAppendQ;
 						output = args[0] ~ " - Invalid input, use one of these: " ~ biblesList;
 						addToHistory("Invalid Bible version: ", bibleVersion);
 					}
 				break;
 				case "i", "info":
+					doAppendQ;
 					output = g_info.toString;
 					addToHistory("Show info");
 				break;
 				//#upto with history
 				case "everyBook": // `everyBook 1 1` eg. Gen 1 1 .., Exo 1 1 ..
+					doAppendQ;
 					auto args2 = args.dup;
 					try {
 						int chp = 1, ver = 1;
@@ -218,23 +234,25 @@ struct ProcessTask {
 					}
 				break;
 				case "everyChp": // Joh n 1 (John 1 1 (verse), John 2 1 (verse) etc)
-						try {
-							if (args.length > 2) {
-								foreach(n; 1 .. g_bible.getBook(g_bible.bookNumberFromTitle(args[0])).m_chapters.length + 1) {
-									string result;
+					doAppendQ;
+					try {
+						if (args.length > 2) {
+							foreach(n; 1 .. g_bible.getBook(g_bible.bookNumberFromTitle(args[0])).m_chapters.length + 1) {
+								string result;
 
-									result = text(args[0], ' ', n.to!string, ' ', args[2 .. $].join(" "));
-									output ~= g_bible.argReference(g_bible.argReferenceToArgs(result));
-								}
+								result = text(args[0], ' ', n.to!string, ' ', args[2 .. $].join(" "));
+								output ~= g_bible.argReference(g_bible.argReferenceToArgs(result));
 							}
-							addToHistory("EveryChp: ", args.join(" "));
 						}
-						catch(Exception e) {
-							output = "Could not be done!";
-							addToHistory("EveryChp: ", output);
-						}
+						addToHistory("EveryChp: ", args.join(" "));
+					}
+					catch(Exception e) {
+						output = "Could not be done!";
+						addToHistory("EveryChp: ", output);
+					}
 				break;
 				case "books":
+					doAppendQ;
 					foreach(bn; iota(1, 33 + 1, 1)) {
 						string bookName(in int start) {
 							return g_bible.getBook(start + bn).m_bookTitle ~ "\t";
@@ -259,6 +277,7 @@ struct ProcessTask {
 					addToHistory("List books");
 				break;
 				case "wrap":
+					doAppendQ;
 					if (args.length == 0) {
 						g_wrap = (g_wrap ? false : true);
 						output = "Text wrap is " ~ (g_wrap ? "on" : "off");
@@ -280,6 +299,7 @@ struct ProcessTask {
 				break;
 				case "btn":
 					if (args.length == 1) {
+						doAppendQ;
 						try {
 							output = text("Book: ", args[0], " number: ", g_bible.bookNumberFromTitle(args[0]).to!string);
 							addToHistory("Book number: ", args[0]);
@@ -293,21 +313,25 @@ struct ProcessTask {
 					}
 				break;
 				case "ps":
+					doAppendQ;
 					output = args.join(" ").phraseSearch;
 					addToHistory("Phrase search: '", args.join(" "), "'");
 				break;
 				case "ws":
+					doAppendQ;
 					auto argsa = cast(string[])args;
 					output = argsa.wordSearch(WordSearchType.wholeWords);
 					addToHistory("Whole Word search: ", args.join(" "));
 				break;
 				case "pws":
+					doAppendQ;
 					// can have word parts (house - can find houses, notice the s)
 					auto argsa = cast(string[])args;
 					output = argsa.wordSearch(WordSearchType.wordParts);
 					addToHistory("Part Word search: ", args.join(" "));
 				break;
 				case "chp":
+					doAppendQ;
 					if (args.length == 1) {
 						int index;
 						auto argsa = cast(string)args[0];
@@ -345,6 +369,7 @@ struct ProcessTask {
 				if (end == -1)
 					end = input.length;
 				input = input[0 .. end].strip;
+				doAppendQ;
 			}
 			output = g_bible.argReference(g_bible.argReferenceToArgs(input));
 			addToHistory(history);
