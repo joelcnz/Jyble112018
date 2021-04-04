@@ -61,6 +61,7 @@ struct ProcessTask {
 				default: doVerse = true; break;
 				case "crossReferences", "cross":
 					if (args.length) {
+						doAppendQ;
 						auto a = args.join(" ");
 						string titleAndFooter = a~" -> Cross reference\n";
 						string result = titleAndFooter;
@@ -369,9 +370,10 @@ struct ProcessTask {
 				if (end == -1)
 					end = input.length;
 				input = input[0 .. end].strip;
-				doAppendQ;
 			}
 			output = g_bible.argReference(g_bible.argReferenceToArgs(input));
+			if (output.length)
+				doAppendQ;
 			addToHistory(history);
 		}
 
