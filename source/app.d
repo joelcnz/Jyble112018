@@ -18,7 +18,8 @@ version(unittest) {
 		writeln;
 	}
 
-	loadCrossRefs("cross_references.txt"); //#new
+	// loadCrossRefs("cross_references.txt"); //#new
+	loadCrossRefs();
 
 	Main.init(args);
 
@@ -43,23 +44,13 @@ version(unittest) {
 						g_RigWindow.getAppBox.getSearchBox.getSearchRadioBox.setActivateButtonByNumber(line.to!int);
 					} catch(Exception e) {
 						"Invalid number. non fatal error".gh;
-
 					}
 				break;
 				case CASE:
-					try {
-						g_RigWindow.getAppBox.getSearchBox.getCaseCheckButton.setActive(line == "1" ? true : false);
-					} catch(Exception e) {
-						"Invalid setting. non fatal error".gh;
-					}
+					g_RigWindow.getAppBox.getSearchBox.getCaseCheckButton.setActive(line == "1" ? true : false);
 				break;
 				case APPEND:
-					try {
-						g_RigWindow.getAppBox.getSearchBox.getAppendCheckButton.setActive(line == "1" ? true : false);
-					} catch(Exception e) {
-						"Invalid setting. non fatal error".gh;
-
-					}
+					g_RigWindow.getAppBox.getSearchBox.getAppendCheckButton.setActive(line == "1" ? true : false);
 				break;
 			}
 		i += 1;
