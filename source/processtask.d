@@ -65,17 +65,23 @@ struct ProcessTask {
 						string titleAndFooter = a~" -> cross reference\n";
 						string result = titleAndFooter;
 
-						foreach(i, vr; bl_verRefs) {
-							if (bl_vers[i] == a)
-								result ~= vr ~ "\n";
+						foreach(i, vr; bl_verRefs)
+							if (bl_vers[i]==a)
+								result~=vr~"\n";
+						
+						void setText(in string txt) {
+							partnerBigBoxes.getMyTextViewRight.getTextBuffer.setText=txt;
+						}
+
+						auto getText() {
+							return partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText;
 						}
 
 						result ~= titleAndFooter;
-						if (partnerSearchBox.getAppendCheckButton.getActive == false)
-							partnerBigBoxes.getMyTextViewRight.getTextBuffer.setText = result;
+						if (partnerSearchBox.getAppendCheckButton.getActive==false)
+							setText(result);
 						else
-							partnerBigBoxes.getMyTextViewRight.getTextBuffer.setText = 
-								partnerBigBoxes.getMyTextViewRight.getTextBuffer.getText ~ result;
+							setText(getText~result);
 						addToHistory("Do '", a, "' Cross references.");	
 					}
 				break;
